@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share Your Feedback | FeedPulse Customer Portal</title>
+  
+  <meta name="description" content="We value your voice! Please share your experience and ratings with our products and services.">
+
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background: linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%); min-height: 100vh;">
+
+<!-- Public Header -->
+<header style="background: #FFFFFF; border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--primary), #8B5CF6); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 1.2rem;">
+      <i class="fa-solid fa-comments"></i>
+    </div>
+    <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--secondary);">
+      FeedPulse
+      <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; display: block;">Customer Experience Portal</span>
+    </div>
+  </div>
+
+  <div>
+    {% if session.get('admin_logged_in') %}
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm" id="btnAdminDashboardLink">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>Admin Dashboard</span>
+      </a>
+    {% else %}
+      <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm" id="btnAdminLoginLink">
+        <i class="fa-solid fa-lock"></i>
+        <span>Admin Login</span>
+      </a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="public-form-wrapper">
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+            <div class="alert-content">
+              {% if category == 'success' %}
+                <i class="fa-solid fa-circle-check"></i>
+              {% else %}
+                <i class="fa-solid fa-circle-exclamation"></i>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" class="alert-close" aria-label="Close alert">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if submitted %}
+    <!-- Submission Success Card -->
+    <div class="feedback-form-card success-card" id="submissionSuccessBanner">
+      <div class="success-icon-wrap">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h2>Thank You for Your Feedback!</h2>
+      <p>
+        Your response has been successfully recorded. Our automated sentiment engine has processed your submission to help our team continuously improve our quality of service.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+        <a href="{{ url_for('main.feedback_form') }}" class="btn btn-primary" id="btnSubmitAnother">
+          <i class="fa-solid fa-plus"></i>
+          <span>Submit Another Feedback</span>
+        </a>
+        {% if session.get('admin_logged_in') %}
+          <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Back to Dashboard</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <!-- Form Header -->
+    <div class="form-header-card">
+      <h1>We Value Your Feedback</h1>
+      <p>Please share your honest ratings and feedback to help us serve you better.</p>
+    </div>
+
+    <!-- Main Feedback Form -->
+    <div class="feedback-form-card">
+      <form method="POST" action="{{ url_for('main.feedback_form') }}" id="publicFeedbackForm" novalidate>
+        
+        <div class="form-grid">
+          
+          <!-- Customer Name -->
+          <div class="form-group">
+            <label class="form-label" for="customerName">
+              Customer Full Name <span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="customerName" 
+              name="customer_name" 
+              class="form-control" 
+              placeholder="e.g. Rohith Sharma" 
+              value="{{ customer_name or '' }}" 
+              required
+            >
+          </div>
+
+          <!-- Email Address -->
+          <div class="form-group">
+            <label class="form-label" for="emailInput">
+              Email Address <span class="required">*</span>
+            </label>
+            <input 
+              type="email" 
+              id="emailInput" 
+              name="email" 
+              class="form-control" 
+              placeholder="e.g. name@example.com" 
+              value="{{ email or '' }}" 
+              required
+            >
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label class="form-label" for="phoneInput">
+              Phone Number <span class="required">*</span>
+            </label>
+            <input 
+              type="tel" 
+              id="phoneInput" 
+              name="phone" 
+              class="form-control" 
+              placeholder="e.g. +91 98765 43210" 
+              value="{{ phone or '' }}" 
+              required
+            >
+          </div>
+
+          <!-- Submission Date (Display / Default) -->
+          <div class="form-group">
+            <label class="form-label" for="submissionDate">
+              Submission Date
+            </label>
+            <input 
+              type="date" 
+              id="submissionDate" 
+              name="submission_date" 
+              class="form-control" 
+              value="{{ today or '' }}" 
+              readonly
+              style="background-color: var(--surface-alt); cursor: not-allowed;"
+            >
+          </div>
+
+          <!-- Product / Service -->
+          <div class="form-group">
+            <label class="form-label" for="productService">
+              Product / Service Name <span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="productService" 
+              name="product_service" 
+              class="form-control" 
+              placeholder="e.g. Mobile Banking App, Cloud Sync" 
+              value="{{ product_service or '' }}" 
+              required
+            >
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label class="form-label" for="categorySelect">
+              Feedback Category <span class="required">*</span>
+            </label>
+            <select id="categorySelect" name="category" class="form-control" required>
+              <option value="" disabled {% if not selected_category %}selected{% endif %}>Select category...</option>
+              {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Rating from 1 to 5 Stars (Interactive Widget) -->
+        <div class="form-group full-width" style="margin-bottom: 24px;">
+          <label class="form-label">
+            Overall Rating <span class="required">*</span>
+          </label>
+          <div class="star-rating-widget">
+            <div class="star-rating-stars">
+              {% for i in range(1, 6) %}
+                <button 
+                  type="button" 
+                  class="star-btn {% if (rating or 5) >= i %}active{% endif %}" 
+                  data-value="{{ i }}" 
+                  aria-label="{{ i }} stars"
+                  id="star-btn-{{ i }}"
+                >
+                  <i class="fa-solid fa-star"></i>
+                </button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="rating" id="ratingInput" value="{{ rating or 5 }}">
+            <div class="star-rating-label">
+              <span id="ratingText">5 Stars - Outstanding / Excellent</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback Message -->
+        <div class="form-group full-width">
+          <label class="form-label" for="feedbackMessage">
+            Detailed Feedback Message <span class="required">*</span>
+          </label>
+          <textarea 
+            id="feedbackMessage" 
+            name="message" 
+            class="form-control" 
+            placeholder="Tell us what you liked or how we can improve our service (minimum 10 characters)..." 
+            required
+          >{{ message or '' }}</textarea>
+          <div class="char-counter" id="charCount">0 characters (minimum 10 required)</div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="reset" class="btn btn-secondary" id="formResetBtn">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Reset Form</span>
+          </button>
+          <button type="submit" class="btn btn-primary" id="btnFeedbackSubmit">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Submit Feedback</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- Footer -->
+<footer style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem;">
+  FeedPulse Customer Experience Portal &copy; 2026. BCA Final Year Project.
+</footer>
+
+<script>
+  // Set today's date in submission date input
+  const dateInput = document.getElementById('submissionDate');
+  if (dateInput && !dateInput.value) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  }
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+</body>
+</html>

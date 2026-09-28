@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview{% endblock %}
+{% block page_title %}Analytics & Executive Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <h1>Executive Performance Overview</h1>
+  <p>Real-time customer satisfaction metrics, sentiment distribution, and incoming feedback streams.</p>
+</div>
+
+<!-- 6 Key Performance Indicator (KPI) Cards -->
+<div class="kpi-grid">
+  
+  <!-- Total Feedback -->
+  <div class="kpi-card" id="kpi-total-feedback">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Total Feedback</span>
+      <div class="kpi-icon-wrap kpi-icon-primary">
+        <i class="fa-solid fa-comments"></i>
+      </div>
+    </div>
+    <div class="kpi-value">{{ stats.total_feedback }}</div>
+    <div class="kpi-subtext">All-time customer submissions</div>
+  </div>
+
+  <!-- Average Rating -->
+  <div class="kpi-card" id="kpi-avg-rating">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Average Rating</span>
+      <div class="kpi-icon-wrap kpi-icon-star">
+        <i class="fa-solid fa-star"></i>
+      </div>
+    </div>
+    <div class="kpi-value">{{ stats.avg_rating }} <span style="font-size: 1.1rem; color: var(--text-muted); font-weight: 500;">/ 5.0</span></div>
+    <div class="kpi-subtext">
+      {% for i in range(1, 6) %}
+        {% if i <= stats.avg_rating|round|int %}
+          <i class="fa-solid fa-star text-stars" style="font-size: 0.75rem;"></i>
+        {% else %}
+          <i class="fa-regular fa-star text-stars" style="font-size: 0.75rem; opacity: 0.4;"></i>
+        {% endif %}
+      {% endfor %}
+      Satisfaction index
+    </div>
+  </div>
+
+  <!-- Positive Feedback -->
+  <div class="kpi-card" id="kpi-positive">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Positive</span>
+      <div class="kpi-icon-wrap kpi-icon-positive">
+        <i class="fa-solid fa-face-smile"></i>
+      </div>
+    </div>
+    <div class="kpi-value" style="color: var(--positive);">{{ stats.positive_count }}</div>
+    <div class="kpi-subtext"><strong>{{ stats.positive_pct }}%</strong> of total submissions</div>
+  </div>
+
+  <!-- Neutral Feedback -->
+  <div class="kpi-card" id="kpi-neutral">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Neutral</span>
+      <div class="kpi-icon-wrap kpi-icon-neutral">
+        <i class="fa-solid fa-face-meh"></i>
+      </div>
+    </div>
+    <div class="kpi-value" style="color: var(--neutral);">{{ stats.neutral_count }}</div>
+    <div class="kpi-subtext"><strong>{{ stats.neutral_pct }}%</strong> of total submissions</div>
+  </div>
+
+  <!-- Negative Feedback -->
+  <div class="kpi-card" id="kpi-negative">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Negative</span>
+      <div class="kpi-icon-wrap kpi-icon-negative">
+        <i class="fa-solid fa-face-frown"></i>
+      </div>
+    </div>
+    <div class="kpi-value" style="color: var(--negative);">{{ stats.negative_count }}</div>
+    <div class="kpi-subtext"><strong>{{ stats.negative_pct }}%</strong> of total submissions</div>
+  </div>
+
+  <!-- Today's Feedback -->
+  <div class="kpi-card" id="kpi-today">
+    <div class="kpi-card-top">
+      <span class="kpi-title">Received Today</span>
+      <div class="kpi-icon-wrap kpi-icon-today">
+        <i class="fa-solid fa-calendar-day"></i>
+      </div>
+    </div>
+    <div class="kpi-value" style="color: #9333EA;">{{ stats.today_count }}</div>
+    <div class="kpi-subtext">New entries logged today</div>
+  </div>
+
+</div>
+
+<!-- 4 Interactive Chart.js Graphs (2x2 Grid) -->
+<div class="charts-grid">
+  
+  <!-- 1. Rating Distribution Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">
+        <i class="fa-solid fa-chart-column"></i>
+        Rating Distribution
+      </h3>
+      <span class="badge badge-star">1 to 5 Stars</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="ratingChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 2. Sentiment Distribution Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">
+        <i class="fa-solid fa-chart-pie"></i>
+        Sentiment Breakdown
+      </h3>
+      <span class="badge badge-category">Lexicon Classification</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="sentimentChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 3. Feedback Trend Line Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">
+        <i class="fa-solid fa-arrow-trend-up"></i>
+        Feedback Submission Trend
+      </h3>
+      <span class="badge badge-category">Active Timeline</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- 4. Category-wise Breakdown Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">
+        <i class="fa-solid fa-layer-group"></i>
+        Category-Wise Distribution
+      </h3>
+      <span class="badge badge-category">Departments</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Feedbacks Table Card -->
+<div class="dashboard-table-card">
+  <div class="table-card-header">
+    <h3 class="table-card-title">
+      <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); margin-right: 8px;"></i>
+      Recent Customer Feedback
+    </h3>
+    <a href="{{ url_for('main.feedback_list') }}" class="btn btn-secondary btn-sm" id="btnViewAllFeedback">
+      <span>View All Records</span>
+      <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Product / Service</th>
+          <th>Category</th>
+          <th>Rating</th>
+          <th>Sentiment</th>
+          <th>Message Preview</th>
+          <th>Date</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_feedbacks %}
+          {% for item in recent_feedbacks %}
+            <tr>
+              <td>
+                <div class="customer-cell">
+                  <span class="customer-name">{{ item.customer_name }}</span>
+                  <span class="customer-email">{{ item.email }}</span>
+                </div>
+              </td>
+              <td><strong>{{ item.product_service }}</strong></td>
+              <td><span class="badge badge-category">{{ item.category }}</span></td>
+              <td>
+                <span class="badge badge-star">
+                  {{ item.rating }} <i class="fa-solid fa-star"></i>
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-{{ item.sentiment|lower }}">
+                  {% if item.sentiment == 'Positive' %}
+                    <i class="fa-solid fa-circle-check"></i>
+                  {% elif item.sentiment == 'Neutral' %}
+                    <i class="fa-solid fa-circle-minus"></i>
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark"></i>
+                  {% endif %}
+                  {{ item.sentiment }}
+                </span>
+              </td>
+              <td>
+                <div class="table-message-preview" title="{{ item.message }}">
+                  {{ item.message }}
+                </div>
+              </td>
+              <td>
+                <small class="text-muted">{{ item.created_at|datetime_format('%b %d, %Y') }}</small>
+              </td>
+              <td style="text-align: right;">
+                <div class="table-actions" style="justify-content: flex-end;">
+                  <a href="{{ url_for('main.feedback_detail', feedback_id=item.id) }}" class="action-btn" title="View Details">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <button type="button" class="action-btn action-btn-danger" title="Delete Feedback" onclick="openDeleteModal({{ item.id }}, '{{ item.customer_name|replace("'", "\\'") }}')">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+              <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+              No feedback entries found yet. Submit customer feedback to see live analytics!
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Embedded JSON Payload for Chart.js -->
+<script id="chartDataPayload" type="application/json">
+  {{ chart_payload|tojson }}
+</script>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Details #{{ feedback.id }}{% endblock %}
+{% block page_title %}Feedback Record #{{ feedback.id }}{% endblock %}
+
+{% block content %}
+<!-- Header Bar -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <a href="{{ url_for('main.feedback_list') }}" class="btn btn-secondary btn-sm" style="margin-bottom: 8px;">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back to Feedback List</span>
+    </a>
+    <h1 style="font-size: 1.8rem;">Feedback Details #{{ feedback.id }}</h1>
+  </div>
+
+  <div style="display: flex; gap: 12px;">
+    <button type="button" class="btn btn-outline-danger" onclick="openDeleteModal({{ feedback.id }}, '{{ feedback.customer_name|replace("'", "\\'") }}')">
+      <i class="fa-solid fa-trash-can"></i>
+      <span>Delete Record</span>
+    </button>
+  </div>
+</div>
+
+<div class="detail-grid">
+  
+  <!-- Left Column: Customer & Message -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Customer & Metadata Card -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <div class="detail-customer">
+          <h2>{{ feedback.customer_name }}</h2>
+          <span style="color: var(--text-muted); font-size: 0.9rem;">
+            Submitted on {{ feedback.created_at|datetime_format('%B %d, %Y at %I:%M %p') }}
+          </span>
+        </div>
+        <div>
+          <span class="badge badge-category" style="font-size: 0.85rem; padding: 6px 14px;">
+            {{ feedback.category }}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-meta-list">
+        <div class="meta-item">
+          <span class="meta-label">Email Address</span>
+          <span class="meta-value">
+            <a href="mailto:{{ feedback.email }}">{{ feedback.email }}</a>
+          </span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Phone Number</span>
+          <span class="meta-value">{{ feedback.phone }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Product / Service</span>
+          <span class="meta-value">{{ feedback.product_service }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Customer Rating</span>
+          <div class="meta-value" style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-star" style="font-size: 0.9rem;">
+              {{ feedback.rating }} / 5 Stars
+            </span>
+            <span class="text-stars" style="font-size: 1.1rem;">
+              {% for i in range(1, 6) %}
+                {% if i <= feedback.rating %}
+                  <i class="fa-solid fa-star"></i>
+                {% else %}
+                  <i class="fa-regular fa-star" style="opacity: 0.3;"></i>
+                {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Verbatim Message -->
+      <div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-comment-dots" style="color: var(--primary);"></i>
+          Customer Message
+        </h3>
+        <div class="message-box">
+          "{{ feedback.message }}"
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Right Column: Sentiment Analysis Inspector -->
+  <div>
+    <div class="sentiment-inspector-card">
+      <h3 style="font-size: 1.15rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-brain" style="color: var(--primary);"></i>
+        Sentiment Analysis Engine
+      </h3>
+      
+      <!-- Primary Sentiment Classification Badge -->
+      <div class="sentiment-badge-large {{ feedback.sentiment }}">
+        {% if feedback.sentiment == 'Positive' %}
+          <i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i> Positive Sentiment
+        {% elif feedback.sentiment == 'Neutral' %}
+          <i class="fa-solid fa-circle-minus" style="margin-right: 6px;"></i> Neutral Sentiment
+        {% else %}
+          <i class="fa-solid fa-circle-xmark" style="margin-right: 6px;"></i> Negative Sentiment
+        {% endif %}
+      </div>
+
+      <!-- Calibrated Score Metric -->
+      <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+        <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+          Compound Polarity Score
+        </div>
+        <div style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--text-main);">
+          {{ '%+.2f'|format(sentiment_breakdown.score) }}
+          <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">(-1.00 to +1.00 scale)</span>
+        </div>
+      </div>
+
+      <!-- Detected Keywords -->
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+          <i class="fa-solid fa-tags" style="color: var(--positive); margin-right: 4px;"></i>
+          Positive Keywords Detected:
+        </div>
+        <div class="keyword-chips">
+          {% if sentiment_breakdown.positive_keywords %}
+            {% for word in sentiment_breakdown.positive_keywords %}
+              <span class="chip chip-pos">+ {{ word }}</span>
+            {% endfor %}
+          {% else %}
+            <span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">None detected</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+          <i class="fa-solid fa-tags" style="color: var(--negative); margin-right: 4px;"></i>
+          Negative Keywords Detected:
+        </div>
+        <div class="keyword-chips">
+          {% if sentiment_breakdown.negative_keywords %}
+            {% for word in sentiment_breakdown.negative_keywords %}
+              <span class="chip chip-neg">- {{ word }}</span>
+            {% endfor %}
+          {% else %}
+            <span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">None detected</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Algorithmic Explanation -->
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+          Classification Logic & Explanation:
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-body); background: #F1F5F9; border-radius: var(--radius-sm); padding: 12px; line-height: 1.5;">
+          {{ sentiment_breakdown.explanation }}
+        </p>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 14px;">
+        <i class="fa-solid fa-circle-info" style="color: var(--primary); margin-right: 4px;"></i>
+        <strong>BCA Project Note:</strong> Uses lightweight lexicon-based NLP with negation flipping, intensifier scaling, and rating weighting without external paid APIs.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

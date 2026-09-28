@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Feedback{% endblock %}
+{% block page_title %}Customer Feedback Directory{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1>Customer Feedback Directory</h1>
+    <p>Search, filter, analyze, and manage customer reviews and ratings in real-time.</p>
+  </div>
+  <div>
+    <span class="badge badge-category" style="font-size: 0.9rem; padding: 8px 16px;">
+      Total Records: <strong>{{ total_records }}</strong>
+    </span>
+  </div>
+</div>
+
+<!-- Search & Multi-Filter Card -->
+<div class="filter-card">
+  <form method="GET" action="{{ url_for('main.feedback_list') }}" class="filter-form" id="feedbackFilterForm">
+    
+    <!-- Search Box -->
+    <div class="form-group">
+      <label class="form-label" for="searchQ">
+        <i class="fa-solid fa-magnifying-glass"></i> Search
+      </label>
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-search"></i>
+        <input 
+          type="text" 
+          id="searchQ" 
+          name="q" 
+          class="form-control" 
+          placeholder="Name, email, product, or keyword..." 
+          value="{{ q }}"
+        >
+      </div>
+    </div>
+
+    <!-- Rating Filter -->
+    <div class="form-group">
+      <label class="form-label" for="filterRating">Rating</label>
+      <select id="filterRating" name="rating" class="form-control">
+        <option value="">All Ratings</option>
+        {% for r in [5, 4, 3, 2, 1] %}
+          <option value="{{ r }}" {% if rating == r|string %}selected{% endif %}>{{ r }} Stars</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="form-group">
+      <label class="form-label" for="filterCategory">Category</label>
+      <select id="filterCategory" name="category" class="form-control">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Sentiment Filter -->
+    <div class="form-group">
+      <label class="form-label" for="filterSentiment">Sentiment</label>
+      <select id="filterSentiment" name="sentiment" class="form-control">
+        <option value="">All Sentiments</option>
+        <option value="Positive" {% if sentiment == 'Positive' %}selected{% endif %}>Positive</option>
+        <option value="Neutral" {% if sentiment == 'Neutral' %}selected{% endif %}>Neutral</option>
+        <option value="Negative" {% if sentiment == 'Negative' %}selected{% endif %}>Negative</option>
+      </select>
+    </div>
+
+    <!-- Sort Order -->
+    <div class="form-group">
+      <label class="form-label" for="filterSort">Sort By</label>
+      <select id="filterSort" name="sort" class="form-control">
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+        <option value="rating_high" {% if sort == 'rating_high' %}selected{% endif %}>Highest Rating</option>
+        <option value="rating_low" {% if sort == 'rating_low' %}selected{% endif %}>Lowest Rating</option>
+      </select>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary" id="btnApplyFilter" title="Apply Filters">
+        <i class="fa-solid fa-filter"></i>
+        <span>Filter</span>
+      </button>
+      <a href="{{ url_for('main.feedback_list') }}" class="btn btn-secondary" id="btnResetFilter" title="Clear Filters">
+        <i class="fa-solid fa-rotate-left"></i>
+      </a>
+    </div>
+
+  </form>
+</div>
+
+<!-- Feedback Table Card -->
+<div class="dashboard-table-card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>Customer</th>
+          <th>Contact</th>
+          <th>Product / Service</th>
+          <th>Category</th>
+          <th>Rating</th>
+          <th>Sentiment</th>
+          <th>Date</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if feedbacks %}
+          {% for f in feedbacks %}
+            <tr>
+              <td><span style="font-weight: 700; color: var(--text-muted);">#{{ f.id }}</span></td>
+              <td>
+                <div class="customer-name" style="font-weight: 600; color: var(--text-main);">
+                  {{ f.customer_name }}
+                </div>
+              </td>
+              <td>
+                <div style="font-size: 0.82rem; color: var(--text-body);">
+                  <div><i class="fa-regular fa-envelope" style="width: 14px; color: var(--text-muted);"></i> {{ f.email }}</div>
+                  <div><i class="fa-solid fa-phone" style="width: 14px; color: var(--text-muted);"></i> {{ f.phone }}</div>
+                </div>
+              </td>
+              <td><strong>{{ f.product_service }}</strong></td>
+              <td><span class="badge badge-category">{{ f.category }}</span></td>
+              <td>
+                <span class="badge badge-star">
+                  {{ f.rating }} <i class="fa-solid fa-star"></i>
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-{{ f.sentiment|lower }}">
+                  {% if f.sentiment == 'Positive' %}
+                    <i class="fa-solid fa-circle-check"></i>
+                  {% elif f.sentiment == 'Neutral' %}
+                    <i class="fa-solid fa-circle-minus"></i>
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark"></i>
+                  {% endif %}
+                  {{ f.sentiment }}
+                </span>
+              </td>
+              <td>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">
+                  {{ f.created_at|datetime_format('%b %d, %Y') }}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <div class="table-actions" style="justify-content: flex-end;">
+                  <a href="{{ url_for('main.feedback_detail', feedback_id=f.id) }}" class="action-btn" title="View Full Details" id="btn-view-{{ f.id }}">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <button type="button" class="action-btn action-btn-danger" title="Delete Feedback" onclick="openDeleteModal({{ f.id }}, '{{ f.customer_name|replace("'", "\\'") }}')" id="btn-del-{{ f.id }}">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 48px; color: var(--text-muted);">
+              <i class="fa-solid fa-magnifying-glass" style="font-size: 2.2rem; margin-bottom: 12px; display: block; opacity: 0.4;"></i>
+              No feedback records match your selected filter criteria.
+              <div style="margin-top: 12px;">
+                <a href="{{ url_for('main.feedback_list') }}" class="btn btn-secondary btn-sm">Clear All Filters</a>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <div class="pagination-info">
+        Showing Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong> ({{ total_records }} items)
+      </div>
+
+      <div class="pagination-nav">
+        <!-- Previous Page -->
+        {% if page > 1 %}
+          <a href="{{ url_for('main.feedback_list', page=page-1, q=q, rating=rating, category=category, sentiment=sentiment, date_from=date_from, date_to=date_to, sort=sort) }}" class="page-btn">
+            <i class="fa-solid fa-chevron-left"></i>
+          </a>
+        {% else %}
+          <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
+        {% endif %}
+
+        <!-- Page Numbers -->
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == page %}
+            <span class="page-btn active">{{ p }}</span>
+          {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('main.feedback_list', page=p, q=q, rating=rating, category=category, sentiment=sentiment, date_from=date_from, date_to=date_to, sort=sort) }}" class="page-btn">{{ p }}</a>
+          {% elif p == 4 or p == total_pages - 3 %}
+            <span class="page-btn disabled">...</span>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next Page -->
+        {% if page < total_pages %}
+          <a href="{{ url_for('main.feedback_list', page=page+1, q=q, rating=rating, category=category, sentiment=sentiment, date_from=date_from, date_to=date_to, sort=sort) }}" class="page-btn">
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        {% else %}
+          <span class="page-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

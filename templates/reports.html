@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+{% block page_title %}Executive Analytics & Reporting{% endblock %}
+
+{% block content %}
+<div class="reports-actions-bar">
+  <div>
+    <h1>Executive Feedback Report</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Generated on {{ generated_at }} | Comprehensive performance metrics and data exports.
+    </p>
+  </div>
+
+  <div class="action-buttons-group">
+    <button type="button" class="btn btn-secondary" id="printReportBtn" title="Print or save as PDF via browser">
+      <i class="fa-solid fa-print"></i>
+      <span>Print Report</span>
+    </button>
+    
+    <a href="{{ url_for('main.export_csv') }}" class="btn btn-secondary" id="btnExportCsv" title="Export all feedback records to CSV file">
+      <i class="fa-solid fa-file-csv"></i>
+      <span>Export CSV</span>
+    </a>
+
+    <a href="{{ url_for('main.export_pdf') }}" class="btn btn-primary" id="btnExportPdf" title="Download formatted PDF executive report">
+      <i class="fa-solid fa-file-pdf"></i>
+      <span>Download PDF</span>
+    </a>
+  </div>
+</div>
+
+<!-- 1. Executive Summary KPIs -->
+<div class="report-section-card">
+  <h2 class="report-section-title">
+    <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+    1. Executive Performance Summary
+  </h2>
+
+  <div class="kpi-grid" style="margin-bottom: 0;">
+    <div class="kpi-card" style="padding: 16px;">
+      <span class="kpi-title">Total Feedback</span>
+      <div class="kpi-value" style="font-size: 1.8rem; margin: 8px 0 4px;">{{ summary_stats.total_feedback }}</div>
+      <div class="kpi-subtext">All historical customer entries</div>
+    </div>
+
+    <div class="kpi-card" style="padding: 16px;">
+      <span class="kpi-title">Average Rating</span>
+      <div class="kpi-value" style="font-size: 1.8rem; margin: 8px 0 4px;">{{ summary_stats.avg_rating }} / 5.0</div>
+      <div class="kpi-subtext">Overall customer satisfaction</div>
+    </div>
+
+    <div class="kpi-card" style="padding: 16px;">
+      <span class="kpi-title">Positive Feedback</span>
+      <div class="kpi-value" style="font-size: 1.8rem; margin: 8px 0 4px; color: var(--positive);">
+        {{ summary_stats.positive_count }}
+        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">({{ summary_stats.positive_pct }}%)</span>
+      </div>
+      <div class="kpi-subtext">Favorable responses</div>
+    </div>
+
+    <div class="kpi-card" style="padding: 16px;">
+      <span class="kpi-title">Neutral Feedback</span>
+      <div class="kpi-value" style="font-size: 1.8rem; margin: 8px 0 4px; color: var(--neutral);">
+        {{ summary_stats.neutral_count }}
+        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">({{ summary_stats.neutral_pct }}%)</span>
+      </div>
+      <div class="kpi-subtext">Balanced / mixed reviews</div>
+    </div>
+
+    <div class="kpi-card" style="padding: 16px;">
+      <span class="kpi-title">Negative Feedback</span>
+      <div class="kpi-value" style="font-size: 1.8rem; margin: 8px 0 4px; color: var(--negative);">
+        {{ summary_stats.negative_count }}
+        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">({{ summary_stats.negative_pct }}%)</span>
+      </div>
+      <div class="kpi-subtext">Critical issues logged</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Category Statistics Table -->
+<div class="report-section-card">
+  <h2 class="report-section-title">
+    <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+    2. Category-Wise Performance Statistics
+  </h2>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Total Feedback</th>
+          <th>Share of Total</th>
+          <th>Average Rating</th>
+          <th>Positive Sentiment Rate</th>
+          <th>Satisfaction Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if category_stats %}
+          {% for cat in category_stats %}
+            <tr>
+              <td><strong>{{ cat.category }}</strong></td>
+              <td>{{ cat.count }}</td>
+              <td>{{ cat.percentage }}%</td>
+              <td>
+                <span class="badge badge-star">
+                  {{ '%.2f'|format(cat.avg_rating) }} <i class="fa-solid fa-star"></i>
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div style="flex: 1; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden; min-width: 80px;">
+                    <div style="width: {{ cat.positive_pct }}%; height: 100%; background: var(--positive);"></div>
+                  </div>
+                  <span style="font-weight: 600; font-size: 0.85rem;">{{ cat.positive_pct }}%</span>
+                </div>
+              </td>
+              <td>
+                {% if cat.avg_rating >= 4.0 %}
+                  <span class="badge badge-positive"><i class="fa-solid fa-circle-check"></i> High Performing</span>
+                {% elif cat.avg_rating >= 3.0 %}
+                  <span class="badge badge-neutral"><i class="fa-solid fa-circle-minus"></i> Stable</span>
+                {% else %}
+                  <span class="badge badge-negative"><i class="fa-solid fa-triangle-exclamation"></i> Needs Action</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              No category data recorded yet.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 3. Rating Breakdown Table -->
+<div class="report-section-card">
+  <h2 class="report-section-title">
+    <i class="fa-solid fa-star" style="color: var(--star-gold);"></i>
+    3. Star Rating Distribution Breakdown
+  </h2>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Rating Score</th>
+          <th>Total Submissions</th>
+          <th>Percentage Share</th>
+          <th>Distribution Visual</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rating_stats %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; width: 60px;">{{ r.stars }} Stars</span>
+                <span class="text-stars">
+                  {% for i in range(r.stars) %}<i class="fa-solid fa-star"></i>{% endfor %}
+                </span>
+              </div>
+            </td>
+            <td><strong>{{ r.count }}</strong></td>
+            <td>{{ r.percentage }}%</td>
+            <td>
+              <div style="width: 100%; max-width: 300px; height: 10px; background: #E2E8F0; border-radius: 5px; overflow: hidden;">
+                <div style="width: {{ r.percentage }}%; height: 100%; background: {% if r.stars >= 4 %}var(--positive){% elif r.stars == 3 %}var(--neutral){% else %}var(--negative){% endif %};"></div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 4. Monthly Performance Statistics -->
+<div class="report-section-card">
+  <h2 class="report-section-title">
+    <i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i>
+    4. Monthly Feedback & Satisfaction Log
+  </h2>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Period (Year-Month)</th>
+          <th>Volume</th>
+          <th>Average Rating</th>
+          <th>Positive Share</th>
+          <th>Negative Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if monthly_stats %}
+          {% for m in monthly_stats %}
+            <tr>
+              <td><strong>{{ m.month }}</strong></td>
+              <td>{{ m.count }}</td>
+              <td>
+                <span class="badge badge-star">
+                  {{ '%.2f'|format(m.avg_rating) }} <i class="fa-solid fa-star"></i>
+                </span>
+              </td>
+              <td>
+                <span style="color: var(--positive); font-weight: 600;">{{ m.pos_pct }}%</span>
+              </td>
+              <td>
+                <span style="color: var(--negative); font-weight: 600;">{{ m.neg_pct }}%</span>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              No monthly trend data recorded yet.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}
